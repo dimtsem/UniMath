@@ -13,6 +13,7 @@ Require Import UniMath.Foundations.NaturalNumbers.
 
 Require Import UniMath.Combinatorics.Lists.
 
+Require Import UniMath.MoreFoundations.PartA. (* flip *)
 Require Import UniMath.MoreFoundations.Tactics.
 
 Require Import UniMath.CategoryTheory.total2_paths.
@@ -25,7 +26,7 @@ Require Import UniMath.CategoryTheory.limits.initial.
 Require Import UniMath.CategoryTheory.FunctorAlgebras.
 Require Import UniMath.CategoryTheory.limits.binproducts.
 Require Import UniMath.CategoryTheory.limits.terminal.
-Require Import UniMath.CategoryTheory.CocontFunctors.
+Require Import UniMath.CategoryTheory.Chains.All.
 Require Import UniMath.CategoryTheory.exponentials.
 Require Import UniMath.CategoryTheory.limits.bincoproducts.
 Require Import UniMath.CategoryTheory.PrecategoryBinProduct.
@@ -240,13 +241,11 @@ Definition sum : List natHSET -> nat :=
 (* Eval vm_compute in sum testlistS. *)
 
 (* All of these compute *)
-Eval lazy in length _ (nil natHSET).
-Eval lazy in length _ testlist.
-Eval lazy in length _ testlistS.
-Eval lazy in sum testlist.
-Eval lazy in sum testlistS.
-Eval lazy in length _ (concatenate _ testlist testlistS).
-Eval lazy in sum (concatenate _ testlist testlistS).
+Goal length _ (nil natHSET) = 0. reflexivity. Qed.
+Goal length _ testlist = length _ testlistS. reflexivity. Qed.
+Goal sum testlistS = sum testlist + length _ testlist. lazy. reflexivity. Qed.
+Goal length _ (concatenate _ testlist testlistS) = length _ testlist + length _ testlistS. reflexivity. Qed.
+Goal sum (concatenate _ testlist testlistS) = sum testlistS + sum testlist. reflexivity. Qed.
 
 Goal (∏ l, length _ (2 :: l) = S (length _ l)).
 simpl.
@@ -336,8 +335,7 @@ Defined.
 (* Eval compute in (to_list _ testlist). *)
 
 (* This does compute: *)
-Eval lazy in (to_list _ testlist).
-
+Goal to_list _ testlist = 2,,5,,2,,tt. reflexivity. Qed.
 
 End list.
 
@@ -354,8 +352,6 @@ Variables (x : HSET).
 Definition constprod_functor : functor HSET HSET :=
   BinProduct_of_functors HSET HSET BinProductsHSET (constant_functor HSET HSET x)
                                          (functor_identity HSET).
-
-Definition flip {A B C : UU} (f : A -> B -> C) : B -> A -> C := λ x y, f y x.
 
 Lemma omega_cocontConstProdFunctor : is_omega_cocont constprod_functor.
 Proof.
@@ -465,7 +461,7 @@ Proof.
 apply (is_omega_cocont_functor_composite has_homsets_HSET).
 - apply omega_cocontConstProdFunctor.
 (* If I use this length doesn't compute with vm_compute... *)
-(* - apply (omega_cocont_constprod_functor1 _ _ has_homsets_HSET has_exponentials_HSET). *)
+(* - apply (omega_cocont_constprod_functor1 _ _ has_homsets_HSET Exponentials_HSET). *)
 - apply (omega_cocontConstCoprodFunctor _ has_homsets_HSET).
 Defined.
 

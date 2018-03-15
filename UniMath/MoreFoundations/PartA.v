@@ -14,7 +14,10 @@ Qed.
 Note: similar to [transportf_pathsinv0_var], [transportf_pathsinv0'],
 but not quite a special case of them, or (as far as I can find) any other
 library lemma.
-*)
+ *)
+
+
+
 Lemma transportf_transpose {X : UU} {P : X → UU} {x x' : X}
       (e : x = x') (y : P x) (y' : P x') :
       transportb P e y' = y -> y' = transportf P e y.
@@ -62,6 +65,18 @@ Proof.
   - exact ex.
 Qed.
 
+
+Lemma transportf_set {A : UU} (B : A → UU)
+      {a : A} (e : a = a) (b : B a)
+      (X : isaset A)
+  : transportf B e b = b.
+Proof.
+  apply transportf_comp_lemma_hset.
+  - apply X.
+  - apply idpath.
+Defined.
+
+
 Lemma transportf_pair {A B} (P : A × B -> UU) {a a' : A} {b b' : B}
       (eA : a = a') (eB : b = b') (p : P (a,,b))
       : transportf P (pathsdirprod eA eB) p =
@@ -89,13 +104,6 @@ Lemma pr1_transportf (A : UU) (B : A -> UU) (P : ∏ a, B a -> UU)
      transportf (λ x, B x) e (pr1 xs).
 Proof.
   destruct e; apply idpath.
-Defined.
-
-Lemma transportf_const (A B : UU) (a a' : A) (e : a = a') (b : B) :
-   transportf (λ _, B) e b = b.
-Proof.
-  induction e.
-  apply idpath.
 Defined.
 
 Lemma coprodcomm_coprodcomm {X Y : UU} (v : X ⨿ Y) : coprodcomm Y X (coprodcomm X Y v) = v.
@@ -138,3 +146,50 @@ Proof.
   intros.
   apply idpath.
 Defined.
+
+(** If x = y, then x = z if and only if y = z by transitivity. *)
+Definition transitive_paths_weq {X : UU} {x y z : X} :
+  x = y -> (x = z ≃ y = z).
+Proof.
+  intro xeqy.
+  use weq_iso.
+  - intro xeqz.
+    exact (!xeqy @ xeqz).
+  - intro yeqz.
+    exact (xeqy @ yeqz).
+  - intro xeqz.
+    refine (path_assoc _ _ _ @ _).
+    refine (maponpaths (λ p, p @ xeqz) (pathsinv0r xeqy) @ _).
+    reflexivity.
+  - intro yeqz.
+    refine (path_assoc _ _ _ @ _).
+    refine (maponpaths (λ p, p @ yeqz) (pathsinv0l xeqy) @ _).
+    reflexivity.
+Defined.
+
+(** A rewrite of [pathsdirprod] as an equivalence:
+    Two pairs are equal if and only if both of their components are. *)
+Definition pathsdirprodweq {X Y : UU} {x1 x2 : X} {y1 y2 : Y} :
+  (dirprodpair x1 y1 = dirprodpair x2 y2) ≃ (x1 = x2) × (y1 = y2).
+Proof.
+  intermediate_weq (dirprodpair x1 y1 ╝ dirprodpair x2 y2).
+  - apply total2_paths_equiv.
+  - unfold PathPair; cbn.
+    use weqfibtototal; intro p; cbn.
+    apply transitive_paths_weq.
+    apply (toforallpaths _ _ _ (transportf_const p Y) y1).
+Defined.
+
+(** Flip the arguments of a function *)
+Definition flipsec {A B : UU} {C : A -> B -> UU} (f : ∏ a b, C a b) : ∏ b a, C a b :=
+  λ x y, f y x.
+Notation flip := flipsec.
+
+(** Flip is a weak equivalence (in fact, it is an involution) *)
+Lemma isweq_flipsec {A B : UU} {C : A -> B -> UU} : isweq (@flipsec A B C).
+Proof.
+  apply (isweq_iso _ flipsec); reflexivity.
+Defined.
+
+Definition flipsec_weq {A B : UU} {C : A -> B -> UU} :
+  (∏ a b, C a b) ≃ (∏ b a, C a b) := weqpair flipsec isweq_flipsec.
